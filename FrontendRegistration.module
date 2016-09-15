@@ -1,0 +1,157 @@
+<?php
+
+/**
+ * ProcessWire Frontend Registration
+ *
+ * 
+ * ProcessWire 2.x 
+ * Copyright (C) 2016 by Artem Nedodaev
+ * This file licensed under Mozilla Public License v2.0 http://mozilla.org/MPL/2.0/
+ * 
+ * https://processwire.com
+ *
+ */
+
+class FrontendRegistration extends Process implements Module {
+
+	public static function getModuleInfo() {
+		return array(
+			'title' => 'Frontend Registration', 
+			'summary' => 'Module add registration, authorization and profile page. Include basic actions for this functions.',
+			'version' => 0.01, 
+			'author' => 'Artem Nedodaev', 
+			'href' => 'http://anwes.ru',
+			'singular' => true,
+			'icon' => 'sign-in',
+			);
+	}
+
+	const pageName = "login";
+
+	public function init() {
+		parent::init();
+	}
+
+	/**
+	 * Install the module 
+	 *
+	 * Creating Login and Profile templates
+	 * Creating Login and Profile pages
+	 *
+	 */
+	public function ___install() {
+
+		// Login Part
+		//Create fieldgroup for login template
+		$fieldgroup = new Fieldgroup();
+		$fieldgroup->name = "login";
+		$fieldgroup->add($this->wire("fields")->get("title"));
+		$fieldgroup->save();	
+
+		if(!$fieldgroup->id) throw new WireException("Unable to create fieldgroup: login"); 
+
+		//Create template for login page
+		$template = new Template(); 
+		$template->name = "login";
+		$template->fieldgroup = $fieldgroup; 
+		$template->flags = Template::flagSystem; //not sure that is need
+		$template->noChildren = 1;
+		$template->noParents = 1; // prevents users from creating pages with this template, but not us
+		$template->noGlobal = 1; 
+		$template->urlSegments = 1; 
+		$template->slashUrls = 1; 
+		$template->save();
+		$this->message("Added Template: {$template->name}");
+
+		//Create hidden login page
+		$page = new Page();
+		$page->template = "login";
+		$page->parent = $this->pages->get("/");
+		$page->status = Page::statusHidden | Page::statusLocked;
+		$page->name = self::pageName;
+		$page->title = "Login";
+		$page->save();
+		$this->message("Added Page: {$page->path}");
+
+		//Profile Part
+		//Create fieldgroup for profile template
+		$fieldgroup = new Fieldgroup();
+		$fieldgroup->name = "profile";
+		$fieldgroup->add($this->wire("fields")->get("title"));
+		$fieldgroup->save();	
+
+		if(!$fieldgroup->id) throw new WireException("Unable to create fieldgroup: profile"); 
+
+		//Create template for profile page
+		$template = new Template(); 
+		$template->name = "profile";
+		$template->fieldgroup = $fieldgroup; 
+		$template->flags = Template::flagSystem; //not sure that is need
+		$template->noChildren = 1;
+		$template->noParents = 1; // prevents users from creating pages with this template, but not us
+		$template->noGlobal = 1; 
+		$template->urlSegments = 1; 
+		$template->slashUrls = 1; 
+		$template->save();
+		$this->message("Added Template: {$template->name}");
+
+		//Create hidden profile page
+		$page = new Page();
+		$page->template = "profile";
+		$page->parent = $this->pages->get("/");
+		$page->status = Page::statusHidden | Page::statusLocked;
+		$page->name = "profile";
+		$page->title = "Profile";
+		$page->save();
+		$this->message("Added Page: {$page->path}");
+
+
+	}
+
+	/**
+	 * Uninstall the module 
+	 *
+	 * Deleting Login and Profile pages
+	 * Deleting Login and Profile pages
+	 *
+	 */
+	public function ___uninstall() {
+
+		$pages = $this->wire("pages");
+		$templates = $this->wire("templates");
+		$fieldgroups = $this->wire("fieldgroups");
+
+		//Delete login page
+		$page = $pages->get("template=login");
+		$pages->delete($page, true);
+		$this->message("Delete page: {$page->path}");
+		//Delete profile page
+		$page = $pages->get("template=profile");
+		$pages->delete($page, true);
+		$this->message("Delete page: {$page->path}");
+
+		//Delete login template
+		$template = $templates->get("login");
+		$fg = $template->fieldgroup;
+		$template->flags = Template::flagSystemOverride;
+		$template->flags = 0;
+		$template->save();
+		$templates->delete($template);
+		$this->message("Deleting template: {$template->name}");
+		//Delete fieldgroup
+		$fieldgroups->delete($fg);
+
+		//Delete profile template
+		$template = $templates->get("profile");
+		$fg = $template->fieldgroup;
+		$template->flags = Template::flagSystemOverride;
+		$template->flags = 0;
+		$template->save();
+		$templates->delete($template);
+		$this->message("Deleting template: {$template->name}");
+		//Delete profile fieldgroup
+		$fieldgroups->delete($fg);
+
+	}
+
+}
