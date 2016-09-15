@@ -3,6 +3,7 @@
 /**
  * ProcessWire Frontend Registration
  *
+ *
  * 
  * ProcessWire 2.x 
  * Copyright (C) 2016 by Artem Nedodaev
@@ -37,7 +38,8 @@ class FrontendRegistration extends Process implements Module {
 	 *
 	 * Creating Login and Profile templates
 	 * Creating Login and Profile pages
-	 *
+	 * Creating and adding fields for user (for store user properties)
+	 * 
 	 */
 	public function ___install() {
 
@@ -69,7 +71,7 @@ class FrontendRegistration extends Process implements Module {
 		$page->parent = $this->pages->get("/");
 		$page->status = Page::statusHidden | Page::statusLocked;
 		$page->name = self::pageName;
-		$page->title = "Login";
+		$page->title = __("Login");
 		$page->save();
 		$this->message("Added Page: {$page->path}");
 
@@ -101,10 +103,45 @@ class FrontendRegistration extends Process implements Module {
 		$page->parent = $this->pages->get("/");
 		$page->status = Page::statusHidden | Page::statusLocked;
 		$page->name = "profile";
-		$page->title = "Profile";
+		$page->title = __("Profile");
 		$page->save();
 		$this->message("Added Page: {$page->path}");
 
+		//======
+		//Create user fields and add to user templates
+
+		//Find user template and get user fieldgroup
+		$templates = $this->wire("templates");
+		$fields = $this->fields;
+		$userFg = $templates->get("user")->fieldgroup;
+
+		// Create u_name field for store users first names
+		// Check existing field
+		if($fields->get("u_name")->id == ''){
+			$field = new Field();
+			$field->type = $this->modules->get("FieldtypeText"); // get a field type
+			$field->name = 'u_name';
+			$field->label = __("First Name");
+			$field->save();
+			// Add user_name to fieldgroup
+			$userFg->add($field);
+			$userFg->save();
+			$this->message("Create and add First Name to user template");
+		}
+
+		// Create u_lastname field for store users first names
+		// Check existing field
+		if($fields->get("u_lastname")->id == ''){
+			$field = new Field();
+			$field->type = $this->modules->get("FieldtypeText"); // get a field type
+			$field->name = 'u_lastname';
+			$field->label = __("Last Name");
+			$field->save();
+			// Add user_name to fieldgroup
+			$userFg->add($field);
+			$userFg->save(); 
+			$this->message("Create and add Last Name to user template"); 
+		}
 
 	}
 
@@ -121,16 +158,16 @@ class FrontendRegistration extends Process implements Module {
 		$templates = $this->wire("templates");
 		$fieldgroups = $this->wire("fieldgroups");
 
-		//Delete login page
+		//Deleting login page
 		$page = $pages->get("template=login");
 		$pages->delete($page, true);
 		$this->message("Delete page: {$page->path}");
-		//Delete profile page
+		//Deleting profile page
 		$page = $pages->get("template=profile");
 		$pages->delete($page, true);
 		$this->message("Delete page: {$page->path}");
 
-		//Delete login template
+		//Deleting login template
 		$template = $templates->get("login");
 		$fg = $template->fieldgroup;
 		$template->flags = Template::flagSystemOverride;
@@ -138,10 +175,10 @@ class FrontendRegistration extends Process implements Module {
 		$template->save();
 		$templates->delete($template);
 		$this->message("Deleting template: {$template->name}");
-		//Delete fieldgroup
+		//Deleting fieldgroup
 		$fieldgroups->delete($fg);
 
-		//Delete profile template
+		//Deleting profile template
 		$template = $templates->get("profile");
 		$fg = $template->fieldgroup;
 		$template->flags = Template::flagSystemOverride;
@@ -149,7 +186,7 @@ class FrontendRegistration extends Process implements Module {
 		$template->save();
 		$templates->delete($template);
 		$this->message("Deleting template: {$template->name}");
-		//Delete profile fieldgroup
+		//Deleting profile fieldgroup
 		$fieldgroups->delete($fg);
 
 	}
